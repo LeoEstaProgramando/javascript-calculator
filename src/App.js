@@ -1,201 +1,185 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
+const calcData = [
+    { id: "clear", value: "AC" },
+    { id: "divide", value: "/" },
+    { id: "multiply", value: "x" },
+    { id: "seven", value: 7 },
+    { id: "eight", value: 8 },
+    { id: "nine", value: 9 },
+    { id: "subtract", value: "-" },
+    { id: "four", value: 4 },
+    { id: "five", value: 5 },
+    { id: "six", value: 6 },
+    { id: "add", value: "+" },
+    { id: "one", value: 1 },
+    { id: "two", value: 2 },
+    { id: "three", value: 3 },
+    { id: "equals", value: "=" },
+    { id: "zero", value: 0 },
+    { id: "decimal", value: "." },
+];
+
+const operators = ["AC", "/", "x", "+", "-", "="];
+
+const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+const Display = ({ input, output }) => (
+    <div className="output">
+        <span className="result">{output}</span>
+        <span id="display" className="input">
+            {input}
+        </span>
+    </div>
+);
+
+const Key = ({ keyData: { id, value }, handleInput }) => (
+    <button id={id} onClick={() => handleInput(value)}>
+        {value}
+    </button>
+);
+
+const Keyboard = ({ handleInput }) => (
+    <div className="keys">
+        {calcData.map((key) => (
+            <Key key={key.id} keyData={key} handleInput={handleInput}></Key>
+        ))}
+    </div>
+);
+
 function App() {
-    const [value, setValue] = useState("0");
-    const [displayValue, setDisplayValue] = useState("0");
-    const [operator, setOperator] = useState("");
-    const [result, setResult] = useState(0);
+    const [input, setInput] = useState("0");
+    const [output, setOutput] = useState("");
+    const [calculatorData, setCalculatorData] = useState("");
 
-    const handleNumberClick = (num) => {
-        if (displayValue === "0") {
-            setDisplayValue(num);
-            setValue(num);
-            setOperator("");
+    const handleSubmit = () => {
+        console.log({ calculatorData });
+    
+        const total = eval(calculatorData);
+        setInput(total);
+        setOutput(`${total} = ${total}`);
+        setCalculatorData(`${total}`);
+      };
+    
+      const handleClear = () => {
+        setInput("0");
+        setCalculatorData("");
+      };
+    
+      const handleNumbers = (value) => {
+        if (!calculatorData.length) {
+          setInput(`${value}`);
+          setCalculatorData(`${value}`);
         } else {
-            setDisplayValue(displayValue + num);
-            setValue(value + num);
-            setOperator("");
+          if (value === 0 && (calculatorData === "0" || input === "0")) {
+            setCalculatorData(`${calculatorData}`);
+          } else {
+            const lastChat = calculatorData.charAt(calculatorData.length - 1);
+            const isLastChatOperator =
+              lastChat === "*" || operators.includes(lastChat);
+    
+            setInput(isLastChatOperator ? `${value}` : `${input}${value}`);
+            setCalculatorData(`${calculatorData}${value}`);
+          }
         }
-    };
-
-    const handleOperatorClick = (op) => {
-        if (value === "0") {
-            setValue(displayValue + op);
-            setDisplayValue(op);
-            setOperator(op);
-        } else if (operator !== "") {
-            setValue(value.slice(0, -1) + op);
-            setDisplayValue(op);
-            setOperator(op);
-        } else if (result !== "0") {
-            setValue(value + op);
-            setDisplayValue(op);
-            setOperator(op);
+      };
+    
+      const dotOperator = () => {
+        const lastChat = calculatorData.charAt(calculatorData.length - 1);
+        if (!calculatorData.length) {
+          setInput("0.");
+          setCalculatorData("0.");
         } else {
-            setValue(value + op);
-            setDisplayValue(op);
-            setOperator(op);
+          if (lastChat === "*" || operators.includes(lastChat)) {
+            setInput("0.");
+            setCalculatorData(`${calculatorData} 0.`);
+          } else {
+            setInput(
+              lastChat === "." || input.includes(".") ? `${input}` : `${input}.`
+            );
+            const formattedValue =
+              lastChat === "." || input.includes(".")
+                ? `${calculatorData}`
+                : `${calculatorData}.`;
+            setCalculatorData(formattedValue);
+          }
+        }
+      };
+    
+    
+      const handleOperators = (value) => {
+        if (calculatorData.length) {
+          setInput(`${value}`);
+          const beforeLastChat = calculatorData.charAt(calculatorData.length - 2);
+    
+          const beforeLastChatIsOperator =
+            operators.includes(beforeLastChat) || beforeLastChat === "*";
+    
+          const lastChat = calculatorData.charAt(calculatorData.length - 1);
+          
+          const lastChatIsOperator = operators.includes(lastChat) || lastChat === "*";
+          
+          const validOp = value === "x" ? "*" : value;
+          if (
+            (lastChatIsOperator && value !== "-") ||
+            (beforeLastChatIsOperator && lastChatIsOperator)
+          ) {
+            if (beforeLastChatIsOperator) {
+              const updatedValue = `${calculatorData.substring(
+                0,
+                calculatorData.length - 2
+              )}${value}`;
+              setCalculatorData(updatedValue);
+            } else {
+              setCalculatorData(`${calculatorData.substring(0, calculatorData.length - 1)}${validOp}`);
+            }
+          } else {
+            setCalculatorData(`${calculatorData}${validOp}`);
+          }
+        }
+      };
+      
+    const handleInput = (value) => {
+        const number = numbers.find((num) => num === value);
+        const operator = operators.find((op) => op === value);
+
+        
+        switch (value) {
+            case "=":
+                handleSubmit();
+                break;
+            case "AC":
+                handleClear();
+                break;
+            case number:
+                handleNumbers(value);
+                break;
+            case ".":
+                dotOperator(value);
+                break;
+            case operator:
+                handleOperators(value);
+                break;
+            default:
+                break;
         }
     };
 
-    const handleDecimalClick = () => {
-        if (!displayValue.includes(".")) {
-            setDisplayValue(displayValue + ".");
-            setValue(value + ".");
-        }
+    const handleOutput = () => {
+        setOutput(calculatorData);
     };
 
-    const handleClearClick = () => {
-        setDisplayValue("0");
-        setValue("0");
-        setOperator("");
-        setResult("0");
-    };
-
-    const handleEqualClick = () => {
-        setResult(eval(value));
-        setValue(eval(value));
-        setDisplayValue(eval(value));
-    };
-
+    useEffect(() => {
+        handleOutput();
+    }, [calculatorData]);
+    
     return (
         <div className="container">
-            <div>
-                <p id="value">{value}</p>
-                <p id="display">{displayValue}</p>
+            <div className="calculator">
+                <Display input={input} output={output}></Display>
+                <Keyboard handleInput={handleInput}></Keyboard>
             </div>
-            <button className="btn" id="clear" onClick={handleClearClick}>
-                AC
-            </button>
-            <button
-                className="btn operation"
-                id="divide"
-                value="/"
-                onClick={() => handleOperatorClick("/")}
-            >
-                /
-            </button>
-            <button
-                className="btn operation"
-                id="multiply"
-                value="*"
-                onClick={() => handleOperatorClick("*")}
-            >
-                x
-            </button>
-            <button
-                className="btn number"
-                id="seven"
-                value="7"
-                onClick={() => handleNumberClick("7")}
-            >
-                7
-            </button>
-            <button
-                className="btn number"
-                id="eight"
-                value="8"
-                onClick={() => handleNumberClick("8")}
-            >
-                8
-            </button>
-            <button
-                className="btn number"
-                id="nine"
-                value="9"
-                onClick={() => handleNumberClick("9")}
-            >
-                9
-            </button>
-            <button
-                className="btn operation"
-                id="subtract"
-                value="-"
-                onClick={() => handleOperatorClick("-")}
-            >
-                -
-            </button>
-            <button
-                className="btn number"
-                id="four"
-                value="4"
-                onClick={() => handleNumberClick("4")}
-            >
-                4
-            </button>
-            <button
-                className="btn number"
-                id="five"
-                value="5"
-                onClick={() => handleNumberClick("5")}
-            >
-                5
-            </button>
-            <button
-                className="btn number"
-                id="six"
-                value="6"
-                onClick={() => handleNumberClick("6")}
-            >
-                6
-            </button>
-            <button
-                className="btn operation"
-                id="add"
-                value="+"
-                onClick={() => handleOperatorClick("+")}
-            >
-                +
-            </button>
-            <button
-                className="btn number"
-                id="one"
-                value="1"
-                onClick={() => handleNumberClick("1")}
-            >
-                1
-            </button>
-            <button
-                className="btn number"
-                id="two"
-                value="2"
-                onClick={() => handleNumberClick("2")}
-            >
-                2
-            </button>
-            <button
-                className="btn number"
-                id="three"
-                value="3"
-                onClick={() => handleNumberClick("3")}
-            >
-                3
-            </button>
-            <button
-                className="btn number"
-                id="zero"
-                value="0"
-                onClick={() => handleNumberClick("0")}
-            >
-                0
-            </button>
-            <button
-                className="btn number"
-                id="decimal"
-                value="."
-                onClick={handleDecimalClick}
-            >
-                .
-            </button>
-            <button
-                className="btn"
-                id="equals"
-                value="="
-                onClick={handleEqualClick}
-            >
-                =
-            </button>
         </div>
     );
 }
